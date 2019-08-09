@@ -1,0 +1,25 @@
+@relation train2
+
+@attribute feature1 numeric
+@attribute feature2 numeric
+@attribute feature3 numeric
+@attribute feature4 numeric
+@attribute feature5 numeric
+@attribute feature6 numeric
+@attribute feature7 numeric
+@attribute feature8 numeric
+@attribute feature9 numeric
+@attribute feature10 numeric
+@attribute feature11 numeric
+@attribute feature12 numeric
+@attribute feature13 numeric
+@attribute feature14 numeric
+@attribute class {0,1}
+
+@data
+903,37.55,37.79,36.23,5,0,38.2,17,4.29,3.56,4.31,13.18,8.89,21,1
+1.807,39,38.14,36.69,4,0,37.7,37,4.67,2.87,4.14,12.69,8.02,20,1
+5.942,41,40.02,37.04,5,0,38.9,28,6.48,3.34,4.34,15.13,8.65,23,1
+253,35.91,36.2,36.55,4,0,38.1,32,3.7,2.78,4.58,11.98,8.28,35,1
+727,37.26,37.33,36.26,5,0,37.7,24,5.33,4.02,4.5,14.93,9.6,17,1
+1.272,38.1,38.35,35.11,5,0,38.6,30,4.32,3.89,4.28,13.66,9.34,12,1

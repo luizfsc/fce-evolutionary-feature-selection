@@ -1,23 +1,33 @@
-function [results] = HCMain()
+function [results] = HCMain(csvFile, foldSize, genIndexFile)
 % *************************************************************************
-% HCMain: 
-%                                    
+% HCMain: uses all files (ARFF/CSV) from /data to generate a dataset that 
+%         can be split into test and training data for classification via 
+%         JAVAMLA                                
 %              
 % Example: 
 %           
 % Author: Luiz F. S. Coletta (luiz.fersc@gmail.com) - 18/10/18
-% Update: Luiz F. S. Coletta - 18/10/18
+% Update: Luiz F. S. Coletta - 9/8/19
 % *************************************************************************
 
-outputResultsPath = [pwd, '/results/'];  % path where datasets will be placed
-inputDataPath = [pwd, '/data/']; % path with images to be analyzed
-csvFile = 1; % 1 for CSV; other case, ARFF
+csvF = 1; % 1 for CSV; else, ARFF
+if (nargin >= 1)
+   csvF = csvFile;
+end
+
+fSize = 6; % size of training fold, the rest will be the test data
+if (nargin >= 2)
+   fSize = foldSize;
+end
+
+indexFile = 0; % > 0 to generate index file mapping the origin of objects
+if (nargin >= 3)
+   indexFile = genIndexFile;
+end
+
+inputDataPath = [pwd, '/data/']; % path with data to be processed
+outputResultsPath = [pwd, '/data/hclass/'];  % path where datasets will be placed
 csvDelimiter = ' ';
-hOLimit = 10 
-
-
-
-indexFile = 1;
 
 allFiles = dir(inputDataPath);
 allNames = {allFiles(~[allFiles.isdir]).name};
@@ -25,84 +35,67 @@ allNames = {allFiles(~[allFiles.isdir]).name};
 fullData = [];
 indexData = [];
 
+% *************************************************************************
+% *********************** MERGE DATA FROM ALL FILES ***********************
+% *************************************************************************
 for i = 1:size(allNames,2)
     
     nameFile = char(allNames(i));
 
-    if ((nameFile(1,size(nameFile,2)) == 'v') && csvFile) % check CSV of ARFF
+    if ((nameFile(1,size(nameFile,2)) == 'v') && csvF) % check CSV
 
         M = dlmread([inputDataPath, nameFile], csvDelimiter);
         
-        if (indexFile == 1)
+        if (indexFile == 1) % form full index file from CSVs
             n1 = repmat([nameFile,'-'],size(M,1),1);
             n2 = 1:size(M,1);
             indexData = [indexData; [n1,int2str(n2')]];
         end 
      
-        fullData = [fullData; M];
+        fullData = [fullData; M]; % form full dataset from CSV files
         
     else 
         % HERE FOR ARFF FILES
     end
-
-
 end 
 
-holdOut = [1,hOLimit];
 
-[Sfilldata] = size (fullData);
+% *************************************************************************
+% ******************* OBTAIN TEST AND TRAINING DATASETS *******************
+% *************************************************************************
+holdOut = [1,fSize];
+totalObj = size(fullData, 1);
+classCol = size(fullData, 2);
 
-lines = Sfilldata(1,1);
+%% AQUI EU CONSIGO A QUANTIDADE DE OBJETOS POR CLASSE
+classLabels = fullData(:,classCol);
+[dist,labels]=hist(classLabels,unique(classLabels));
 
-for i = 1:(lines/holdOut(1,2));
-    Li = i*holdOut(1,2) +1;
+for i = 1:(totalObj/holdOut(1,2))-1;
+    li = i*holdOut(1,2)+1;
     col = (i+1)*holdOut(1,2);
-    if (col > lines)
-        col = lines;
+    if (col > totalObj)
+        col = totalObj;
     end
-    
-    
-    holdOut = [holdOut;Li,col];
+    holdOut = [holdOut; li, col];
 end
 
-[sHoldOut] = size (holdOut);
+for i = 1:size(holdOut, 1);
+    trainD = fullData(holdOut(i,1):holdOut(i,2), :);
+    aux1 = ones(size(fullData,1),1);
+    aux1(holdOut(i,1):holdOut(i,2)) = 0;
+    aux2 = logical(aux1);
+    testD = fullData(aux2, :);
 
-for i = 1:sHoldOut(1,1);
- 
-d=fullData(holdOut(i,1):holdOut(i,2),:);
-a = ones(size(fullData,1),1);
-a(holdOut(i,1):holdOut(i,2)) = 0;
-b = logical(a);
-c = fullData(b, :)
-
-
-ArffWriter([pwd,'/results/'], ['test',num2str(i)], d);
-ArffWriter([pwd,'/results/'], ['training',num2str(i)], c);
+    ArffWriter(outputResultsPath, ['train', num2str(i)], trainD, 1);
+    ArffWriter(outputResultsPath, ['test', num2str(i)], testD, 1);
 end
 
-% agora tem que gerar uma matrix, na qual linhas são
-% as pastas deixadas de fora e cada coluna c1 ~ c2 é o
-% intervalos de objetos para cada pasta. Ex: [1, 10; 11, 20; 21, 30]
-
-%holdOut[1, 10; 11, 20; 21, 30];
-
-% AQUI PEGA A PARTE DE TEST : fullData(holdOut(i,1):holdOut(i,2),:)
-% AQUI PEGA A PARTE DE TRAINING: a = ones(size(fullData,1),1)
-%                                a(holdOut(i,1):holdOut(i,2)) = 0;
-%                                b = logical(a)
-%                               c = fullData(b, :)
-
-
-% Salvar em arquivo de test e de training (ARRF)
- 
- 
 
 
 
 
-% --------
-
-
+%% DAQUI PRA BAIXO PODE DEIXAR PRA DEPOIS
 
 % set 1 for saving results
 nameSavedFile = 'ResultsNB1';
